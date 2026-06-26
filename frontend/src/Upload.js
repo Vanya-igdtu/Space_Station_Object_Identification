@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 function ParticleField() {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -60,6 +61,8 @@ export default function Upload() {
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
 
   const handleFile = (selected) => {
     if (!selected) return;
@@ -104,8 +107,10 @@ export default function Upload() {
       setProgress(100);
       setTimeout(() => {
         if (data.success) {
-          setMessage("Transmission complete — anomaly analysis initiated");
-          setMsgType("success");
+  	setMessage("Transmission complete — anomaly analysis initiated");
+  		setMsgType("success");
+  		setUploadSuccess(true);
+	
         } else {
           setMessage("Upload sequence failed — retry transmission");
           setMsgType("error");
@@ -278,11 +283,35 @@ export default function Upload() {
               </button>
 
               {/* Message */}
-              {message && (
-                <p style={{ ...styles.msg, color: msgColors[msgType] }}>
-                  ✦ {message}
-                </p>
-              )}
+		{message && (
+  		<div>
+   		<p style={{ ...styles.msg, color: msgColors[msgType] }}>
+      		✦ {message}
+    		</p>
+
+    {uploadSuccess && (
+      <button
+        onClick={() => navigate("/detection")}
+        style={{
+          marginTop: "15px",
+          width: "100%",
+          padding: "16px",
+          borderRadius: "12px",
+          border: "1px solid rgba(0,217,255,0.3)",
+          background:
+            "linear-gradient(135deg, rgba(0,217,255,0.15), rgba(99,102,241,0.2))",
+          color: "#d9f6ff",
+          cursor: "pointer",
+          fontSize: "15px",
+          letterSpacing: "2px",
+          textTransform: "uppercase",
+        }}
+      >
+        View Detection Report →
+      </button>
+    )}
+  </div>
+)}
             </div>
           </div>
 
