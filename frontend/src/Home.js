@@ -3,6 +3,9 @@ import { Stars, OrbitControls } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+import { useNavigate } from "react-router-dom";
+import Detection from "./Detection";
+import LiveFeed from "./LiveFeed";
 
 /* ─── FONTS & GLOBAL STYLES ─────────────────────────────────────────── */
 const GlobalStyles = () => (
@@ -159,16 +162,18 @@ function GlobeScene() {
 }
 
 /* ─── SIDEBAR ────────────────────────────────────────────────────────── */
-function Sidebar({ active, setActive }) {
+function Sidebar({ active, setActive, navigate }) {
   const items = [
-    { icon: "dashboard", label: "Dashboard" },
-    { icon: "sensors", label: "Live Feed" },
-    { icon: "visibility", label: "Detection" },
-    { icon: "local_fire_department", label: "Fire Risk" },
-    { icon: "history", label: "History" },
-    { icon: "settings", label: "Settings" },
-  ];
+  { icon: "dashboard", label: "Dashboard" },
 
+  { icon: "upload_file", label: "Upload Image" },
+
+  { icon: "sensors", label: "Live Feed" },
+  { icon: "visibility", label: "Detection" },
+  { icon: "local_fire_department", label: "Fire Risk" },
+  { icon: "history", label: "History" },
+  { icon: "settings", label: "Settings" },
+];
   return (
     <aside style={{
       position: "fixed", left: 0, top: 0, width: 240, height: "100vh",
@@ -204,7 +209,13 @@ function Sidebar({ active, setActive }) {
           <div
             key={label}
             className={`nav-item ${active === label ? "nav-active" : ""}`}
-            onClick={() => setActive(label)}
+            onClick={() => {
+    		if (label === "Upload Image") {
+        	navigate("/upload");
+    		} else {
+        	setActive(label);
+    		}
+		}}
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{icon}</span>
@@ -345,16 +356,12 @@ function StatCard({ icon, label, value, sub, color, delay }) {
 }
 
 /* ─── DETECTION LOG ──────────────────────────────────────────────────── */
-const detections = [
-  { id: "OBJ-001", label: "Fire Extinguisher", zone: "A-4", conf: "97.3%", risk: "LOW", color: "#4ade80" },
-  { id: "OBJ-002", label: "Oxygen Tank", zone: "B-2", conf: "94.1%", risk: "MED", color: "#ffd59c" },
-  { id: "OBJ-003", label: "Toolbox", zone: "C-1", conf: "99.0%", risk: "LOW", color: "#4ade80" },
-  { id: "OBJ-004", label: "Fuel Canister", zone: "A-1", conf: "88.5%", risk: "HIGH", color: "#ff4444" },
-  { id: "OBJ-005", label: "Control Panel", zone: "D-3", conf: "96.2%", risk: "LOW", color: "#4ade80" },
-  { id: "OBJ-006", label: "Pressure Valve", zone: "B-4", conf: "91.7%", risk: "MED", color: "#ffd59c" },
-];
+
 
 function DetectionLog() {
+  const latestPrediction = JSON.parse(
+  localStorage.getItem("latestPrediction") || "null"
+  );
   return (
     <div className="glass-card" style={{ padding: "18px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -369,32 +376,60 @@ function DetectionLog() {
           <span style={{ fontSize: 8, color: "#ff4444", fontWeight: 700, letterSpacing: "0.15em" }}>LIVE</span>
         </div>
       </div>
-      <div style={{ overflowY: "auto", maxHeight: 220 }}>
-        {detections.map((d, i) => (
-          <motion.div
-            key={d.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 + i * 0.07 }}
+      
+	<div style={{ overflowY: "auto", maxHeight: 220 }}>
+  {latestPrediction ? (
+    latestPrediction.objects.map((obj, index) => (
+      <motion.div
+        key={index}
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1 * index }}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px",
+          marginBottom: "10px",
+          borderRadius: "8px",
+          background: "#121b2b",
+        }}
+      >
+        <div>
+          <div
             style={{
-              display: "grid", gridTemplateColumns: "60px 1fr 50px 50px 50px",
-              gap: 8, padding: "8px 0",
-              borderBottom: "1px solid rgba(0,209,255,0.05)",
-              fontSize: 9, alignItems: "center",
+              color: "#dce2f6",
+              fontWeight: "600",
             }}
           >
-            <span style={{ color: "#4a6070", fontFamily: "'JetBrains Mono', monospace" }}>{d.id}</span>
-            <span style={{ color: "#a4bfc9" }}>{d.label}</span>
-            <span style={{ color: "#6b7fa8", textAlign: "center" }}>{d.zone}</span>
-            <span style={{ color: "#00d1ff", textAlign: "right" }}>{d.conf}</span>
-            <span style={{
-              textAlign: "center", fontSize: 8, fontWeight: 700, letterSpacing: "0.1em",
-              color: d.color, padding: "2px 6px", borderRadius: 4,
-              background: `${d.color}18`, border: `1px solid ${d.color}40`,
-            }}>{d.risk}</span>
-          </motion.div>
-        ))}
-      </div>
+            {obj.name}
+          </div>
+
+          <div
+            style={{
+              color: "#6b7fa8",
+              fontSize: "12px",
+            }}
+          >
+            Confidence: {(obj.confidence * 100).toFixed(1)}%
+          </div>
+        </div>
+
+        <span
+          style={{
+            color: "#00d9ff",
+            fontSize: "12px",
+            fontWeight: "bold",
+          }}
+        >
+          DETECTED
+        </span>
+      </motion.div>
+    ))
+  ) : (
+    <p>No detections yet.</p>
+  )}
+</div>
     </div>
   );
 }
@@ -542,10 +577,151 @@ function ThreeDPanel() {
     </div>
   );
 }
+/* ─── Latest Prediction ───────────────────────────────────────────────────────── */
+
+function LatestPrediction() {
+
+  const latestPrediction = JSON.parse(
+    localStorage.getItem("latestPrediction")
+  );
+
+  return (
+    <div
+      className="glass-card"
+      style={{
+        height: 320,
+        padding: "18px",
+        borderRadius: "12px",
+        border: "1px solid rgba(0,209,255,.12)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "10px",
+          color: "#00d1ff",
+          letterSpacing: "0.18em",
+          marginBottom: "12px",
+          textTransform: "uppercase",
+        }}
+      >
+        Latest AI Detection
+      </div>
+
+      {latestPrediction ? (
+        <>
+          <img
+            src={`http://localhost:5000${latestPrediction.annotatedImage}`}
+            alt="Latest Detection"
+            style={{
+              width: "100%",
+              height: "220px",
+              objectFit: "contain",
+              borderRadius: "10px",
+            }}
+          />
+
+          <div
+            style={{
+              marginTop: "10px",
+              color: "#9fb4d3",
+              fontSize: "12px",
+            }}
+          >
+            Zone: <span style={{ color: "#00d1ff" }}>{latestPrediction.zone}</span>
+          </div>
+
+          <div
+            style={{
+              color: "#9fb4d3",
+              fontSize: "12px",
+            }}
+          >
+            Risk Score: <span style={{ color: "#ff6961" }}>{latestPrediction.risk}/10</span>
+          </div>
+        </>
+      ) : (
+        <div
+          style={{
+            height: "240px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            color: "#6b7fa8",
+          }}
+        >
+          Awaiting AI Scan...
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── COMMING SOON ─────────────────────────────────────────────────── */
+
+
+function ComingSoon({ page }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
+      <span
+        className="material-symbols-outlined"
+        style={{
+          fontSize: 40,
+          color: "rgba(0,209,255,0.2)",
+        }}
+      >
+        construction
+      </span>
+
+      <h2 style={{ color: "#d9f6ff" }}>{page}</h2>
+
+      <p
+        style={{
+          fontSize: 11,
+          color: "#4a6070",
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+        }}
+      >
+        Coming Soon
+      </p>
+    </div>
+  );
+}
 
 /* ─── DASHBOARD PAGE ─────────────────────────────────────────────────── */
 function DashboardPage() {
-  return (
+
+	const latestPrediction = JSON.parse(
+  	localStorage.getItem("latestPrediction")
+	);
+	const objectCount = latestPrediction
+  	? latestPrediction.objects.length
+  	: 0;
+
+	const riskScore = latestPrediction
+  	? latestPrediction.risk
+  	: 0;
+
+	const zone = latestPrediction
+  	? latestPrediction.zone
+  	: "N/A";
+	
+	const zoneCount = latestPrediction ? 1 : 0;
+
+	const recommendations = latestPrediction
+  	? latestPrediction.recommendations
+  	: [];
+
+  	return (
     <div style={{ padding: "28px 32px", overflowY: "auto", height: "100%", paddingTop: 20 }}>
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 24 }}>
@@ -565,18 +741,58 @@ function DashboardPage() {
 
       {/* Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 20 }}>
-        <StatCard icon="category" label="Objects Detected" value="47" sub="Last scan: 2m ago" color="#00d1ff" delay={0.1} />
-        <StatCard icon="local_fire_department" label="Fire Risk Score" value="82" sub="Zone A critical" color="#ff4444" delay={0.2} />
-        <StatCard icon="grid_view" label="Zones Monitored" value="12" sub="4 active threats" color="#ffd59c" delay={0.3} />
-        <StatCard icon="notifications_active" label="Active Alerts" value="3" sub="2 require action" color="#ff8c00" delay={0.4} />
-      </div>
+        <StatCard
+  icon="category"
+  label="Objects Detected"
+  value={objectCount.toString()}
+  sub={latestPrediction ? "Latest AI Scan" : "No scan yet"}
+  color="#00d1ff"
+  delay={0.1}
+/>
 
-      {/* 3D Globe + Detection Log */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-        <ThreeDPanel />
-        <DetectionLog />
-      </div>
+<StatCard
+  icon="local_fire_department"
+  label="Fire Risk Score"
+  value={riskScore.toString()}
+  sub={zone}
+  color="#ff4444"
+  delay={0.2}
+/>
 
+<StatCard
+  icon="grid_view"
+  label="Zones Monitored"
+  value={zoneCount.toString()}
+  sub={zone}
+  color="#ffd59c"
+  delay={0.3}
+/>
+<StatCard
+  icon="notifications_active"
+  label="Recommendations"
+  value={recommendations.length.toString()}
+  sub="AI Suggestions"
+  color="#ff8c00"
+  delay={0.4}
+/>
+
+</div>
+
+      {/* 3D Globe + AI Detection + Detection Log */}
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 14,
+    marginBottom: 14,
+  }}
+>
+  <ThreeDPanel />
+
+  <LatestPrediction />
+
+  <DetectionLog />
+</div>
       {/* Zone Risk + Relocation */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <ZoneRisk />
@@ -588,13 +804,19 @@ function DashboardPage() {
 
 /* ─── APP ROOT ───────────────────────────────────────────────────────── */
 export default function App() {
+  
   const [active, setActive] = useState("Dashboard");
+  const navigate = useNavigate();
 
   return (
     <>
       <GlobalStyles />
       <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#0c1321" }}>
-        <Sidebar active={active} setActive={setActive} />
+        <Sidebar
+    	active={active}
+    	setActive={setActive}
+    	navigate={navigate}
+	/>
         <div style={{ marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <TopBar active={active} />
           <main style={{ marginTop: 62, flex: 1, overflow: "hidden" }}>
@@ -609,14 +831,24 @@ export default function App() {
                 className="custom-scrollbar"
               >
                 {active === "Dashboard" && <DashboardPage />}
-                {active !== "Dashboard" && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", flexDirection: "column", gap: 12 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 40, color: "rgba(0,209,255,0.2)" }}>construction</span>
-                    <p style={{ fontSize: 11, color: "#4a6070", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-                      {active} — Coming Soon
-                    </p>
-                  </div>
-                )}
+
+		{active === "Detection" && <Detection />}
+
+		{active === "Live Feed" && (
+  		<LiveFeed />
+		)}
+
+		{active === "Fire Risk" && (
+  		<ComingSoon page="Fire Risk" />
+		)}
+
+		{active === "History" && (
+  		<ComingSoon page="History" />
+		)}
+
+		{active === "Settings" && (
+  		<ComingSoon page="Settings" />
+		)}
               </motion.div>
             </AnimatePresence>
           </main>

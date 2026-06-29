@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 function ParticleField() {
   const canvasRef = useRef(null);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -62,6 +63,7 @@ export default function Upload() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [prediction, setPrediction] = useState(null);
 
 
   const handleFile = (selected) => {
@@ -103,10 +105,16 @@ export default function Upload() {
         body: formData,
       });
       const data = await res.json();
+      console.log(data);
       clearInterval(interval);
       setProgress(100);
       setTimeout(() => {
         if (data.success) {
+	setPrediction(data);
+	localStorage.setItem(
+    	"latestPrediction",
+    	JSON.stringify(data)
+	);
   	setMessage("Transmission complete — anomaly analysis initiated");
   		setMsgType("success");
   		setUploadSuccess(true);
@@ -291,7 +299,11 @@ export default function Upload() {
 
     {uploadSuccess && (
       <button
-        onClick={() => navigate("/detection")}
+        onClick={() =>
+ 	navigate("/detection", {
+    	state: prediction,
+ 	})
+	}
         style={{
           marginTop: "15px",
           width: "100%",
