@@ -22,24 +22,26 @@ function Detection() {
         <h1>No Detection Data Found</h1>
 
         <button
-          onClick={() => navigate("/home", {
-    state: {
+  onClick={() =>
+    navigate("/home", {
+      state: {
         activeTab: "Live Feed",
-    },
-});}
-          style={{
-            marginTop: "20px",
-            padding: "14px 28px",
-            borderRadius: "10px",
-            border: "none",
-            cursor: "pointer",
-            background: "#00d9ff",
-            color: "#08111f",
-            fontWeight: "bold",
-          }}
-        >
-          Upload Image
-        </button>
+      },
+    })
+  }
+  style={{
+    marginTop: "20px",
+    padding: "14px 28px",
+    borderRadius: "10px",
+    border: "none",
+    cursor: "pointer",
+    background: "#00d9ff",
+    color: "#08111f",
+    fontWeight: "bold",
+  }}
+>
+  Start New Scan
+</button>
       </div>
     );
   }
@@ -298,7 +300,13 @@ function Detection() {
 )}
 
 <button
-  onClick={() => navigate("/upload")}
+  onClick={() =>
+    navigate("/home", {
+      state: {
+        activeTab: "Live Feed",
+      },
+    })
+  }
   style={{
     marginTop: "30px",
     padding: "15px 35px",
@@ -310,7 +318,7 @@ function Detection() {
     cursor: "pointer",
   }}
 >
-  Analyze Another Image
+	Start Another Scan
 </button>      
 </div>
 </div>

@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { useNavigate } from "react-router-dom";
 import Detection from "./Detection";
 import LiveFeed from "./LiveFeed";
+import { useLocation } from "react-router-dom";
 
 /* ─── FONTS & GLOBAL STYLES ─────────────────────────────────────────── */
 const GlobalStyles = () => (
@@ -29,7 +30,15 @@ const GlobalStyles = () => (
       white-space: nowrap;
       word-wrap: normal;
     }
+    @keyframes loading {
+    0% {
+    transform: translateX(-100%);
+    }
 
+    100% {
+    transform: translateX(100%);
+    }
+    }
     @keyframes scan {
       0%   { top: -2px; opacity: 0; }
       5%   { opacity: 0.6; }
@@ -802,11 +811,491 @@ function DashboardPage() {
   );
 }
 
+/* ─── FIRE RISK PAGE ───────────────────────────────────────────────────────── */
+function FireRiskPage() {
+  const latestPrediction = JSON.parse(
+    localStorage.getItem("latestPrediction") || "null"
+  );
+
+  if (!latestPrediction) {
+    return (
+      <div style={{ padding: 40, color: "white" }}>
+        <h1>No Fire Risk Data Available</h1>
+        <p>Perform a scan first.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "30px", color: "#dce2f6" }}>
+
+      <h1
+        style={{
+          color: "#00d1ff",
+          marginBottom: "30px",
+          fontFamily: "Orbitron",
+        }}
+      >
+        🔥 Fire Risk Analysis
+      </h1>
+
+      {/* Top Cards */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,1fr)",
+          gap: "20px",
+          marginBottom: "25px",
+        }}
+      >
+
+        <div className="glass-card" style={{ padding: 25 }}>
+          <h3>Overall Risk</h3>
+
+          <h1
+            style={{
+              color:
+                latestPrediction.risk >= 7
+                  ? "#ef4444"
+                  : latestPrediction.risk >= 4
+                  ? "#f59e0b"
+                  : "#22c55e",
+            }}
+          >
+            {latestPrediction.risk}/10
+          </h1>
+        </div>
+
+        <div className="glass-card" style={{ padding: 25 }}>
+          <h3>Assigned Zone</h3>
+
+          <h1 style={{ color: "#00d1ff" }}>
+            {latestPrediction.zone}
+          </h1>
+        </div>
+
+        <div className="glass-card" style={{ padding: 25 }}>
+          <h3>Mission Status</h3>
+
+          <h1
+            style={{
+              color:
+                latestPrediction.risk >= 7
+                  ? "#ef4444"
+                  : latestPrediction.risk >= 4
+                  ? "#f59e0b"
+                  : "#22c55e",
+            }}
+          >
+            {latestPrediction.risk >= 7
+              ? "CRITICAL"
+              : latestPrediction.risk >= 4
+              ? "WARNING"
+              : "SAFE"}
+          </h1>
+        </div>
+
+      </div>
+
+      {/* Risk Meter */}
+
+      <div className="glass-card" style={{ padding: 25 }}>
+
+        <h2 style={{ marginBottom: 20 }}>Risk Meter</h2>
+
+        <div
+          style={{
+            width: "100%",
+            height: "18px",
+            background: "#1d2435",
+            borderRadius: "12px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${latestPrediction.risk * 10}%`,
+              height: "100%",
+              background:
+                latestPrediction.risk >= 7
+                  ? "#ef4444"
+                  : latestPrediction.risk >= 4
+                  ? "#f59e0b"
+                  : "#22c55e",
+            }}
+          />
+        </div>
+
+      </div>
+
+      {/* Recommendations */}
+
+      <div
+        className="glass-card"
+        style={{
+          marginTop: 25,
+          padding: 25,
+        }}
+      >
+
+        <h2
+          style={{
+            color: "#00d1ff",
+            marginBottom: 20,
+          }}
+        >
+          AI Recommendations
+        </h2>
+
+        {latestPrediction.recommendations.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              background: "#121b2b",
+              padding: "14px",
+              borderRadius: "10px",
+              marginBottom: "12px",
+            }}
+          >
+            ✓ {item}
+          </div>
+        ))}
+
+      </div>
+
+      {/* Equipment */}
+
+      <div
+        className="glass-card"
+        style={{
+          marginTop: 25,
+          padding: 25,
+        }}
+      >
+
+        <h2
+          style={{
+            color: "#00d1ff",
+            marginBottom: 20,
+          }}
+        >
+          Detected Equipment
+        </h2>
+
+        {latestPrediction.objects.map((obj, index) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              background: "#121b2b",
+              padding: "12px",
+              marginBottom: "10px",
+              borderRadius: "10px",
+            }}
+          >
+            <span>{obj.name}</span>
+
+            <span style={{ color: "#00d1ff" }}>
+              {(obj.confidence * 100).toFixed(1)}%
+            </span>
+          </div>
+        ))}
+
+      </div>
+
+    </div>
+  );
+}
+
+/* ─── HISTORY PAGE ───────────────────────────────────────────────────────── */
+
+function HistoryPage() {
+
+  const history = JSON.parse(
+    localStorage.getItem("predictionHistory") || "[]"
+  );
+
+  return (
+    <div
+      style={{
+        padding: "30px",
+        color: "#dce2f6",
+      }}
+    >
+      <h1
+        style={{
+          color: "#00d1ff",
+          marginBottom: "30px",
+          fontFamily: "Orbitron",
+        }}
+      >
+        📜 Mission History
+      </h1>
+
+      {history.length === 0 ? (
+        <div
+          className="glass-card"
+          style={{
+            padding: "40px",
+            textAlign: "center",
+          }}
+        >
+          <h2>No mission history available</h2>
+          <p>Perform your first detection scan.</p>
+        </div>
+      ) : (
+
+        history.map((scan, index) => (
+
+          <div
+            key={index}
+            className="glass-card"
+            style={{
+              marginBottom: "20px",
+              padding: "25px",
+            }}
+          >
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "15px",
+              }}
+            >
+
+              <h2>
+                Scan #{history.length - index}
+              </h2>
+
+              <span
+                style={{
+                  color: "#7ea8c7",
+                }}
+              >
+                {scan.timestamp}
+              </span>
+
+            </div>
+
+            <hr
+              style={{
+                borderColor: "#1f2937",
+                marginBottom: "20px",
+              }}
+            />
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3,1fr)",
+                gap: "20px",
+                marginBottom: "20px",
+              }}
+            >
+
+              <div>
+                <h4>Risk Score</h4>
+                <p
+                  style={{
+                    color:
+                      scan.risk >= 7
+                        ? "#ef4444"
+                        : scan.risk >= 4
+                        ? "#f59e0b"
+                        : "#22c55e",
+                    fontSize: "24px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {scan.risk}/10
+                </p>
+              </div>
+
+              <div>
+                <h4>Zone</h4>
+                <p
+                  style={{
+                    color: "#00d1ff",
+                    fontSize: "22px",
+                  }}
+                >
+                  {scan.zone}
+                </p>
+              </div>
+
+              <div>
+                <h4>Objects</h4>
+                <p
+                  style={{
+                    color: "#00d1ff",
+                    fontSize: "22px",
+                  }}
+                >
+                  {scan.objects.length}
+                </p>
+              </div>
+
+            </div>
+
+            <h3
+              style={{
+                color: "#00d1ff",
+                marginBottom: "15px",
+              }}
+            >
+              Detected Equipment
+            </h3>
+
+            {scan.objects.length === 0 ? (
+
+              <p>No equipment detected.</p>
+
+            ) : (
+
+              scan.objects.map((obj, i) => (
+
+                <div
+                  key={i}
+                  style={{
+                    background: "#121b2b",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    marginBottom: "10px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>{obj.name}</span>
+
+                  <span style={{ color: "#00d1ff" }}>
+                    {(obj.confidence * 100).toFixed(1)}%
+                  </span>
+                </div>
+
+              ))
+
+            )}
+
+          </div>
+
+        ))
+
+      )}
+    </div>
+  );
+}
+
+/* ─── SETTINGS PAGE ───────────────────────────────────────────────────────── */
+
+function SettingsPage() {
+
+  const latestPrediction = JSON.parse(
+    localStorage.getItem("latestPrediction") || "null"
+  );
+
+  return (
+    <div
+      style={{
+        padding: "30px",
+        color: "#dce2f6",
+      }}
+    >
+      <h1
+        style={{
+          color: "#00d1ff",
+          marginBottom: "30px",
+          fontFamily: "Orbitron",
+        }}
+      >
+        ⚙ System Settings
+      </h1>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2,1fr)",
+          gap: "20px",
+        }}
+      >
+
+        {/* Model */}
+
+        <div className="glass-card" style={{ padding: "25px" }}>
+          <h2 style={{ color: "#00d1ff" }}>AI Model</h2>
+
+          <p><b>Model:</b> YOLOv8</p>
+          <p><b>Framework:</b> Ultralytics</p>
+          <p><b>Detection Threshold:</b> 0.30</p>
+          <p><b>Classes:</b> FireExtinguisher, OxygenTank, ToolBox</p>
+        </div>
+
+        {/* Application */}
+
+        <div className="glass-card" style={{ padding: "25px" }}>
+          <h2 style={{ color: "#00d1ff" }}>Application</h2>
+
+          <p><b>Frontend:</b> React</p>
+          <p><b>Backend:</b> Express + Python</p>
+          <p><b>Database:</b> Local Storage</p>
+          <p><b>Version:</b> v1.0</p>
+        </div>
+
+        {/* Mission */}
+
+        <div className="glass-card" style={{ padding: "25px" }}>
+          <h2 style={{ color: "#00d1ff" }}>Mission Statistics</h2>
+
+          <p>
+            <b>Latest Zone:</b>{" "}
+            {latestPrediction ? latestPrediction.zone : "N/A"}
+          </p>
+
+          <p>
+            <b>Latest Risk:</b>{" "}
+            {latestPrediction ? `${latestPrediction.risk}/10` : "N/A"}
+          </p>
+
+          <p>
+            <b>Objects Detected:</b>{" "}
+            {latestPrediction ? latestPrediction.objects.length : 0}
+          </p>
+        </div>
+
+        {/* About */}
+
+        <div className="glass-card" style={{ padding: "25px" }}>
+          <h2 style={{ color: "#00d1ff" }}>About</h2>
+
+          <p>
+            Orbital Sentinel is an AI-powered space station safety monitoring
+            system that detects critical equipment using YOLOv8, performs
+            fire-risk analysis, and generates intelligent mission
+            recommendations in real time.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 /* ─── APP ROOT ───────────────────────────────────────────────────────── */
 export default function App() {
-  
-  const [active, setActive] = useState("Dashboard");
+  const location = useLocation();
+  const [active, setActive] = useState(
+  location.state?.activeTab || "Dashboard"
+);
+  useEffect(() => {
+  if (location.state?.activeTab) {
+    setActive(location.state.activeTab);
+  }
+}, [location]);
   const navigate = useNavigate();
+
+ 
 
   return (
     <>
@@ -838,17 +1327,12 @@ export default function App() {
   		<LiveFeed />
 		)}
 
-		{active === "Fire Risk" && (
-  		<ComingSoon page="Fire Risk" />
-		)}
+		{active === "Fire Risk" && <FireRiskPage />}
 
-		{active === "History" && (
-  		<ComingSoon page="History" />
-		)}
+		{active === "History" && <HistoryPage />}
 
-		{active === "Settings" && (
-  		<ComingSoon page="Settings" />
-		)}
+		{active === "Settings" && <SettingsPage />}
+
               </motion.div>
             </AnimatePresence>
           </main>

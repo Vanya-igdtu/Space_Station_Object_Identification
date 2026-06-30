@@ -22,6 +22,7 @@ function StarField() {
     const shootingStars = [];
     function spawnShooting() {
       shootingStars.push({
+
         x: Math.random() * canvas.width * 0.7,
         y: Math.random() * canvas.height * 0.4,
         len: Math.random() * 120 + 60,
@@ -120,11 +121,22 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (data.success) {
-      setMessage("access_granted");
-      setTimeout(() => navigate("/home"), 1000); // small delay so user sees "Access Granted"
-        } else {
+      	const data = await res.json();
+      	if (data.success) {
+
+  	// Start a fresh session
+  	localStorage.removeItem("latestPrediction");
+
+  	// Keep History page intact
+  	// (Don't remove predictionHistory)
+
+  	setMessage("access_granted");
+
+  	setTimeout(() => {
+    	navigate("/home");
+  	}, 1000);
+
+	} else {
       setMessage("access_denied");
         }
     } catch {

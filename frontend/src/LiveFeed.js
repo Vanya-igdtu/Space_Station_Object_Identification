@@ -8,35 +8,46 @@ function LiveFeed() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const canvasRef = useRef(null);
-
+  const [analyzing, setAnalyzing] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
   
   async function startCamera() {
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true
-    });
+  if (cameraOn) return;
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
 
     streamRef.current = stream;
 
     videoRef.current.srcObject = stream;
 
     setCameraOn(true);
+
+  } catch (err) {
+
+    console.log(err);
+
   }
-useEffect(() => {
+
+}
+  useEffect(() => {
+
+    startCamera();
 
     return () => {
 
         if (streamRef.current) {
-
             streamRef.current.getTracks().forEach(track => track.stop());
-
         }
 
     };
 
 }, []);
-
   
   function stopCamera() {
 
@@ -76,6 +87,7 @@ async function captureAndAnalyze() {
       "camera_capture.jpg"
     );
 	console.log("Sending image to backend...");
+	setAnalyzing(true);
     const response = await fetch(
       "http://localhost:5000/upload",
       {
@@ -83,17 +95,33 @@ async function captureAndAnalyze() {
         body: formData,
       }
     );
+	
 	console.log(response);
 
     const data = await response.json();
     console.log(data);
 
     if (data.success) {
-
+	setAnalyzing(false);
   	localStorage.setItem(
-    	"latestPrediction",
-    	JSON.stringify(data)
-  	);
+  	"latestPrediction",
+  	JSON.stringify(data)
+	);
+
+	// Save scan history
+	const history = JSON.parse(
+  	localStorage.getItem("predictionHistory") || "[]"
+	);
+
+	history.unshift({
+  	...data,
+  	timestamp: new Date().toLocaleString(),
+	});
+
+	localStorage.setItem(
+  	"predictionHistory",
+  	JSON.stringify(history)
+	);
 
   	stopCamera();
 	console.log("Navigating to Detection page...");
@@ -109,8 +137,70 @@ async function captureAndAnalyze() {
 }
 
 
-
   return (
+	<>
+{analyzing && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(3,8,20,0.92)",
+      backdropFilter: "blur(8px)",
+      zIndex: 9999,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      flexDirection: "column",
+      color: "#d9f6ff",
+      fontFamily: "Orbitron, sans-serif",
+    }}
+  >
+    <h1
+      style={{
+        color: "#00d9ff",
+        letterSpacing: "4px",
+        marginBottom: "15px",
+      }}
+    >
+      ORBITAL SENTINEL
+    </h1>
+
+    <h2
+      style={{
+        marginBottom: "35px",
+      }}
+    >
+      AI ANALYSIS IN PROGRESS
+    </h2>
+
+    <div
+      style={{
+        width: "260px",
+        height: "12px",
+        background: "#1b2435",
+        borderRadius: "8px",
+        overflow: "hidden",
+        marginBottom: "35px",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#00d9ff",
+          animation: "loading 2s linear infinite",
+        }}
+      />
+    </div>
+
+    <p>Initializing Vision Module...</p>
+    <p>Scanning ISS Environment...</p>
+    <p>Running YOLOv8 Detection...</p>
+    <p>Calculating Mission Risk...</p>
+    <p>Calculating Mission Risk...</p>
+  </div>
+)}
+
 
     <div
       style={{
@@ -166,7 +256,7 @@ async function captureAndAnalyze() {
 
   <button
     onClick={stopCamera}
-    disabled={!cameraOn}
+    disabled={!cameraOn || analyzing}
     style={{
       padding: "14px 28px",
       border: "none",
@@ -191,17 +281,23 @@ async function captureAndAnalyze() {
     border: "none",
     background: "#22c55e",
     color: "white",
-    cursor: cameraOn ? "pointer" : "not-allowed",
+    cursor:
+  !cameraOn || analyzing
+    ? "not-allowed"
+    : "pointer",
     fontWeight: "bold",
     fontSize: "15px",
   }}
 >
-  📸 Capture & Analyze
+  {analyzing
+  ? "Analyzing..."
+  : "📸 Capture & Analyze"}
 </button>
 
 </div>
 
     </div>
+</>
 
   );
 

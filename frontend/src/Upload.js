@@ -112,8 +112,23 @@ export default function Upload() {
         if (data.success) {
 	setPrediction(data);
 	localStorage.setItem(
-    	"latestPrediction",
-    	JSON.stringify(data)
+  	"latestPrediction",
+  	JSON.stringify(data)
+	);
+
+	// Save scan history
+	const history = JSON.parse(
+  	localStorage.getItem("predictionHistory") || "[]"
+	);
+
+	history.unshift({
+  	...data,
+  	timestamp: new Date().toLocaleString(),
+	});
+
+	localStorage.setItem(
+  	"predictionHistory",
+  	JSON.stringify(history)
 	);
   	setMessage("Transmission complete — anomaly analysis initiated");
   		setMsgType("success");
